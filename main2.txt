@@ -1,0 +1,49 @@
+import openpyxl
+
+def verificar_codigos(coincidem_path, at_path, resultado_path):
+    # Carregar as planilhas
+    wb_coincidem = openpyxl.load_workbook(coincidem_path)
+    ws_coincidem = wb_coincidem.active
+
+    wb_at = openpyxl.load_workbook(at_path)
+    ws_at = wb_at.active
+
+    # Ler os códigos da planilha "1at" para comparação
+    codigos_at = set()
+    for row in ws_at.iter_rows(min_row=2, max_col=1, values_only=True):  # Supondo que os códigos estão na coluna A
+        if row[0] is not None:
+            codigos_at.add(row[0])
+
+    # Criar uma nova planilha para os resultados
+    wb_resultado = openpyxl.Workbook()
+    ws_resultado = wb_resultado.active
+    ws_resultado.title = "Resultados"
+
+    # Adicionar cabeçalho na planilha de resultados
+    ws_resultado.append([cell.value for cell in next(ws_coincidem.iter_rows(max_row=1))])
+
+    # Processar a planilha "coincidem"
+    rows_to_keep = []
+    for row in ws_coincidem.iter_rows(min_row=2, values_only=True):
+        codigo_coincidem = row[0]  # Supondo que o código está na coluna A
+        if codigo_coincidem in codigos_at:
+            rows_to_keep.append(row)  # Manter a linha
+        else:
+            ws_resultado.append(row)  # Mover para a planilha de resultados
+
+    # Atualizar a planilha "coincidem" removendo linhas desnecessárias
+    ws_coincidem.delete_rows(2, ws_coincidem.max_row - 1)  # Remover todas as linhas abaixo do cabeçalho
+    for row in rows_to_keep:
+        ws_coincidem.append(row)  # Adicionar as linhas restantes
+
+    # Salvar os arquivos atualizados
+    wb_coincidem.save(coincidem_path)
+    wb_resultado.save(resultado_path)
+
+# Caminhos dos arquivos
+coincidem_path = "coincidem.xlsx"
+at_path = "1at.xlsx"
+resultado_path = "resultado.xlsx"
+
+# Chamar a função
+verificar_codigos(coincidem_path, at_path, resultado_path)

@@ -1,0 +1,56 @@
+import pandas as pd
+from fuzzywuzzy import fuzz
+
+def comparar_e_mover_itens(arquivo1, arquivo2, saida_resultados):
+    # Carregar as planilhas
+    planilha1 = pd.read_excel(arquivo1, usecols=[0, 1], names=['Código', 'Descrição'], skiprows=1)
+    planilha2 = pd.read_excel(arquivo2, usecols=[0, 1], names=['Código', 'Descrição'], skiprows=1)
+
+    # Limpeza dos dados: remover espaços extras e converter para string
+    planilha1['Descrição'] = planilha1['Descrição'].astype(str).str.strip()
+    planilha2['Descrição'] = planilha2['Descrição'].astype(str).str.strip()
+
+    # Inicializar os resultados
+    resultados = []
+    indices_planilha1 = []
+    indices_planilha2 = []
+
+    # Comparar as descrições
+    for i, row1 in planilha1.iterrows():
+        for j, row2 in planilha2.iterrows():
+            # Calcular similaridade apenas entre strings válidas
+            similaridade = fuzz.ratio(row1['Descrição'], row2['Descrição'])
+            if similaridade > 70:  # Ajuste o limiar de similaridade conforme necessário
+                resultados.append({
+                    'Código1': row1['Código'],
+                    'Descrição1': row1['Descrição'],
+                    'Código2': row2['Código'],
+                    'Descrição2': row2['Descrição'],
+                    'Similaridade': similaridade
+                })
+                indices_planilha1.append(i)
+                indices_planilha2.append(j)
+                break  # Evitar múltiplas correspondências para o mesmo item
+
+    # Criar DataFrame de resultados
+    resultados_df = pd.DataFrame(resultados)
+
+    # Remover os itens encontrados das planilhas originais
+    planilha1 = planilha1.drop(indices_planilha1).reset_index(drop=True)
+    planilha2 = planilha2.drop(indices_planilha2).reset_index(drop=True)
+
+    # Salvar resultados
+    resultados_df.to_excel(saida_resultados, index=False)
+    print(f"Itens correspondentes movidos para: {saida_resultados}")
+
+    # Salvar planilhas atualizadas
+    planilha1.to_excel('1_a.xlsx', index=False)
+    planilha2.to_excel('2_a.xlsx', index=False)
+    print("Planilhas originais atualizadas salvas como '1_a.xlsx' e '2_a.xlsx'.")
+
+# Usar a função
+arquivo1 = '1at.xlsx'
+arquivo2 = '2at.xlsx'
+saida_resultados = 'resul_comparacao.xlsx'
+
+comparar_e_mover_itens(arquivo1, arquivo2, saida_resultados)

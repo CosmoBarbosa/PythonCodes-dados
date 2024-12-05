@@ -1,0 +1,30 @@
+import pandas as pd
+
+# Caminhos dos arquivos
+input_file = "coincidem.xlsx"
+output_file = "planilha_atualizada.xlsx"
+duplicates_file = "duplicados.xlsx"
+
+# Nomes das colunas de código e descrição
+code_column = "Código2 (Lista maior)"
+description_column = "Descrição2 (lista Maior)"
+
+# Ler a planilha
+df = pd.read_excel(input_file)
+
+# Verificar se as colunas existem
+if code_column not in df.columns or description_column not in df.columns:
+    raise ValueError(f"As colunas '{code_column}' e/ou '{description_column}' não foram encontradas na planilha.")
+
+# Identificar duplicados com base nas duas colunas
+duplicated_rows = df[df.duplicated(subset=[code_column, description_column], keep=False)]
+
+# Manter apenas uma instância de cada duplicado na planilha original
+df_no_duplicates = df.drop_duplicates(subset=[code_column, description_column], keep='first')
+
+# Salvar os resultados em planilhas separadas
+df_no_duplicates.to_excel(output_file, index=False)
+duplicated_rows.to_excel(duplicates_file, index=False)
+
+print(f"Planilha original atualizada salva em: {output_file}")
+print(f"Planilha com duplicados salva em: {duplicates_file}")
